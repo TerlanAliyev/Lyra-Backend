@@ -117,6 +117,9 @@ model User {
 
   sentChallenges     ChallengeInstance[] @relation("SentChallenges")
   receivedChallenges ChallengeInstance[] @relation("ReceivedChallenges")
+
+  venueReviews VenueReview[]
+  favoriteVenues UserFavoriteVenue[]
 }
 
 model Profile {
@@ -185,6 +188,8 @@ model Venue {
   checkInHistory CheckInHistory[]
   challenges ChallengeInstance[]
 
+  reviews        VenueReview[]
+  favoritedBy    UserFavoriteVenue[]
 }
 
 model ActiveSession {
@@ -506,4 +511,39 @@ model ChallengeInstance {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+
+model BlacklistedIp {
+  ip          String   @id @unique
+  reason      String
+  blockedAt   DateTime @default(now())
+  attemptCount Int     @default(1)
+}
+
+model VenueReview {
+  id        Int      @id @default(autoincrement())
+  rating    Int      @default(0)
+  comment   String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+  
+  // Rəyi verən istifadəçi
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  // Rəy verilən məkan
+  venueId   Int
+  venue     Venue    @relation(fields: [venueId], references: [id])
+  
+  @@unique([authorId, venueId])
+}
+
+model UserFavoriteVenue {
+  userId  String
+  user    User    @relation(fields: [userId], references: [id])
+  
+  venueId Int
+  venue   Venue @relation(fields: [venueId], references: [id])
+
+  @@id([userId, venueId])
 }

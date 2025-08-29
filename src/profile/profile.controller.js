@@ -1,4 +1,3 @@
-
 const { validationResult } = require('express-validator');
 const profileService = require('./profile.service');
 const gamificationService = require('../gamification/gamification.service');
@@ -114,10 +113,35 @@ const getMyProfileCompletion = asyncHandler(async (req, res) => {
     const completionData = await gamificationService.getProfileCompletion(userId);
     res.status(200).json(completionData);
 });
+
+// YENİ KOD: Favoritlərlə bağlı funksiyalar
+const addFavorite = asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+    const venueId = req.params.venueId;
+    await profileService.addFavoriteVenue(userId, venueId);
+    res.status(200).json({ message: 'Mekan favoritlere uğurla əlavə edildi.' });
+});
+
+const removeFavorite = asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+    const venueId = req.params.venueId;
+    await profileService.removeFavoriteVenue(userId, venueId);
+    res.status(200).json({ message: 'Mekan favoritlerden uğurla silindi.' });
+});
+
+const getMyFavorites = asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+    const favorites = await profileService.getFavoriteVenues(userId);
+    res.status(200).json(favorites);
+});
+
 module.exports = {
     updateMyProfile,
     uploadAvatar,
     uploadPhotos,
     getMyProfileViews,deletePhoto,setPrimaryPhoto,updateMyPreferences,
-    requestVerification,updateMyStatus,getMyProfileCompletion
+    requestVerification,updateMyStatus,getMyProfileCompletion,
+    addFavorite,
+    removeFavorite,
+    getMyFavorites,
 };

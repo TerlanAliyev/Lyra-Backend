@@ -1,4 +1,4 @@
-
+// src/location/location.controller.js
 const { validationResult } = require('express-validator');
 const locationService = require('./location.service');
 const { isPremium } = require('../middleware/premium.middleware'); // Bunu faylın yuxarısına əlavə edin
@@ -65,15 +65,54 @@ const finalizeCheckIn = asyncHandler(async (req, res) => {
     });
 });
 const getVenueStats = asyncHandler(async (req, res) => {
-    const stats = await locationService.getVenueStats(req.params.id);
-    res.status(200).json(stats);
+    const venueId = req.params.id;
+    const [stats, reviews, averageRating] = await Promise.all([
+      locationService.getVenueStats(venueId),
+      locationService.getVenueReviews(venueId),
+      locationService.getVenueAverageRating(venueId),
+    ]);
+  
+    res.status(200).json({
+      stats,
+      reviews,
+      averageRating,
+    });
 });
 const getLiveVenueStats = asyncHandler(async (req, res) => {
     const stats = await locationService.getLiveVenueStats(req.params.id);
     res.status(200).json(stats);
 });
+
+// YENİ KOD: Review və Favoritlər üçün funksiyalar
+const submitReview = asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const userId = req.user.userId;
+  const venueId = req.params.id;
+  const { rating, comment } = req.body;
+  
+  await locationService.submitVenueReview(userId, venueId, { rating, comment });
+  const averageRating = await locationService.getVenueAverageRating(venueId);
+
+  res.status(201).json({
+    message: 'Reyiniz uğurla yerləşdirildi!',
+    averageRating: averageRating,
+  });
+});
+
+const getReviews = asyncHandler(async (req, res) => {
+  const venueId = req.params.id;
+  const reviews = await locationService.getVenueReviews(venueId);
+  res.status(200).json(reviews);
+});
+// YENİ EXPORTLARI ƏLAVƏ EDİN
 module.exports = {
   checkIn,
   setIncognito,
-  finalizeCheckIn,getVenueStats,getLiveVenueStats
+  finalizeCheckIn,getVenueStats,getLiveVenueStats,
+  submitReview, // YENİ
+  getReviews, // YENİ
 };

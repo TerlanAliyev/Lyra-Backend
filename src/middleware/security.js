@@ -1,6 +1,30 @@
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const prisma = require('../config/prisma'); // Prisma klientini import edirik
 
+
+const logBlockedIpToDb = async (ip, reason) => {
+  try {
+    // Upsert emeliyyati: Eger IP artiq varsa update et, yoxdursa yarat.
+    await prisma.blacklistedIp.upsert({
+      where: { ip },
+      update: {
+        blockedAt: new Date(),
+        reason: reason,
+        attemptCount: { increment: 1 }
+      },
+      create: {
+        ip,
+        reason: reason,
+        blockedAt: new Date(),
+        attemptCount: 1
+      }
+    });
+    console.warn(`[SECURITY] ⚠️ IP adresi rate limit-i aşıb ve bazaya yazıldı: ${ip}`);
+  } catch (error) {
+    console.error(`[SECURITY] IP adresini bazaya yazarken xeta:`, error);
+  }
+};
 // Login və registrasiya cəhdlərini məhdudlaşdır
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 dəqiqə
@@ -20,21 +44,32 @@ const authLimiter = rateLimit({
 
 // Ümumi API sorğularını məhdudlaşdır
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dəqiqə
-  max: 300, // maksimum 300 sorğu (Lyra aktiv tətbiq olduğu üçün yuxarı limit)
+  windowMs: 10 * 60 * 1000, // 10 dəqiqə
+  max: 10, // maksimum 300 sorğu
   message: {
     error: 'Çox sorğu göndərmisiz! Bir az gözləyin.',
     code: 'GENERAL_RATE_LIMIT_EXCEEDED',
-    retryAfter: 15 * 60
+    retryAfter: 10 * 60
+  },
+  //=== DÜZƏLİŞ BURADADIR ===
+  handler: (req, res, next) => {
+    // Limiti aşıldıqda bu funksiya avtomatik işə düşəcək
+    const ip = req.ip;
+    logBlockedIpToDb(ip, 'General Rate Limit Exceeded');
+    // Standart cavabı geri qaytar
+    res.status(429).json({
+      error: 'Çox sorğu',
+      message: 'Rate limit aşılmışdır. Zəhmət olmasa, 10 dəqiqə gözləyin.',
+      code: 'RATE_LIMIT_EXCEEDED',
+      retryAfter: 10 * 60
+    });
   },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Health check, docs və static faylları skip et
     const skipPaths = ['/health', '/api-docs', '/favicon.ico'];
     return skipPaths.some(path => req.path.includes(path));
   }
-  // keyGenerator silindi - default istifadə olunacaq
 });
 
 // Mesaj göndərmə limiti (daha strict)
@@ -149,5 +184,6 @@ module.exports = {
   signalLimiter,
   helmetConfig,
   customSecurityHeaders,
-  rateLimitErrorHandler
+  rateLimitErrorHandler,
+  logBlockedIpToDb
 };

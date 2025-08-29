@@ -35,8 +35,8 @@ const {
     getVerificationRequests, 
     updateVerificationStatus,
     getBadges, createBadge, updateBadge, deleteBadge,
-    getBadgeRules, createBadgeRule,getChallengeTemplates, createChallengeTemplate, updateChallengeTemplate, deleteChallengeTemplate
-    
+    getBadgeRules, createBadgeRule,getChallengeTemplates, createChallengeTemplate, updateChallengeTemplate, deleteChallengeTemplate,
+   
     
 
 } = require('./admin.controller');
@@ -142,4 +142,9 @@ router.get('/challenge-templates', adminOnly, getChallengeTemplates);
 router.post('/challenge-templates', adminOnly, upload.single('file'), createChallengeTemplate);
 router.patch('/challenge-templates/:id', adminOnly, upload.single('file'), updateChallengeTemplate);
 router.delete('/challenge-templates/:id', adminOnly, deleteChallengeTemplate);
+
+
+
+
+
 module.exports = router;

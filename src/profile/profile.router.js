@@ -1,8 +1,7 @@
-
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth.middleware');
 const { body } = require('express-validator');
-const { updateMyProfile,updateMyStatus,requestVerification,updateMyPreferences, uploadAvatar,uploadPhotos , getMyProfileViews,deletePhoto,setPrimaryPhoto,getMyProfileCompletion } = require('./profile.controller');
+const { updateMyProfile,updateMyStatus,requestVerification,updateMyPreferences, uploadAvatar,uploadPhotos , getMyProfileViews,deletePhoto,setPrimaryPhoto,getMyProfileCompletion, addFavorite, removeFavorite, getMyFavorites } = require('./profile.controller');
 const { isPremium } = require('../middleware/premium.middleware');
 const upload = require('../upload/upload.service'); // Yeni upload servisini import edirik
 
@@ -36,5 +35,10 @@ router.get('/me/completion', authenticateToken, getMyProfileCompletion);
 
 //Premium function
 router.get('/me/views', authenticateToken, isPremium, getMyProfileViews);
+
+// YENİ ENDPOINTLƏR: Favoritlər
+router.post('/me/favorites/:venueId', authenticateToken, addFavorite);
+router.delete('/me/favorites/:venueId', authenticateToken, removeFavorite);
+router.get('/me/favorites', authenticateToken, getMyFavorites);
 
 module.exports = router;

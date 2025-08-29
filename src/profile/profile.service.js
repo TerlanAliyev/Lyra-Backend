@@ -1,4 +1,3 @@
-
 const prisma = require('../config/prisma');
 const cloudinary = require('cloudinary').v2;
 const redis = require('../config/redis'); // Redis client-i import edirik
@@ -239,11 +238,24 @@ const getProfileViews = async (userId) => {
     return prisma.profileView.findMany({
         where: { viewedId: userId },
         orderBy: { createdAt: 'desc' },
+        // DÜZƏLİŞ: 'select' istifadə edərək yalnız lazım olan məlumatları gətiririk
         include: {
-            viewer: { // Baxan şəxsin məlumatlarını da gətiririk
-                include: {
+            viewer: {
+                select: {
+                    id: true,
+                    subscription: true,
                     profile: {
-                        include: { photos: true }
+                        select: {
+                            id: true,
+                            name: true,
+                            age: true,
+                            city: true,
+                            gender: true,
+                            isVerified:true,
+                            photos: {
+                                select: { url: true }
+                            }
+                        }
                     }
                 }
             }
@@ -308,13 +320,48 @@ const updateProfileStatus = async (userId, status) => {
     return updatedProfile;
 };
 
+// YENİ KOD: Favoritlərlə bağlı funksiyalar
+const addFavoriteVenue = async (userId, venueId) => {
+    // DÜZƏLİŞ: 'create' əvəzinə 'upsert' metodundan istifadə edirik
+    return prisma.userFavoriteVenue.upsert({
+        where: {
+            userId_venueId: {
+                userId,
+                venueId: Number(venueId),
+            },
+        },
+        update: {}, // Qeyd mövcuddursa, heç bir dəyişiklik etmirik
+        create: {
+            userId,
+            venueId: Number(venueId),
+        },
+    });
+};
 
+const removeFavoriteVenue = async (userId, venueId) => {
+    return prisma.userFavoriteVenue.delete({
+        where: {
+            userId_venueId: {
+                userId,
+                venueId: Number(venueId),
+            },
+        },
+    });
+};
 
+const getFavoriteVenues = async (userId) => {
+    return prisma.userFavoriteVenue.findMany({
+        where: { userId },
+        include: { venue: true },
+    });
+};
 
 module.exports = {
     updateUserProfile,
     addPhotosToProfile,
     getProfileViews, deletePhoto, setPrimaryPhoto, updateUserPreferences,
     requestProfileVerification, updateProfileStatus,
-
+    addFavoriteVenue,
+    removeFavoriteVenue,
+    getFavoriteVenues,
 };

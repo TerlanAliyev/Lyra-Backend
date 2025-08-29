@@ -1,8 +1,7 @@
-
 const express = require('express');
-const { checkIn,setIncognito,finalizeCheckIn,getVenueStats,getLiveVenueStats  } = require('./location.controller');
+const { checkIn,setIncognito,finalizeCheckIn,getVenueStats,getLiveVenueStats, submitReview, getReviews } = require('./location.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { isPremium } = require('../middleware/premium.middleware');
 
 const router = express.Router();
@@ -32,5 +31,21 @@ router.post(
 );
 router.get('/venues/:id/stats', authenticateToken, getVenueStats);
 router.get('/venues/:id/live-stats', authenticateToken, isPremium, getLiveVenueStats);
+
+// YENİ ENDPOINTLƏR
+router.post(
+  '/venues/:id/reviews',
+  authenticateToken,
+  [
+    body('rating').isInt({ min: 1, max: 5 }).withMessage('Rey 1 ile 5 arasinda olmalidir.'),
+    body('comment').optional().isString().trim().isLength({ max: 255 }).withMessage('Rey 255 simvolu keçmemelidir.'),
+  ],
+  submitReview
+);
+router.get(
+  '/venues/:id/reviews',
+  authenticateToken,
+  getReviews
+);
 
 module.exports = router;

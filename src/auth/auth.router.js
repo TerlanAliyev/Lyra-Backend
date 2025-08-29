@@ -58,6 +58,6 @@ router.post('/reset-password', [
   body('password').isLength({ min: 6 })
 ], resetPassword);
 router.post('/me/initiate-email-change', authenticateToken, [body('newEmail').isEmail()], initiateEmailChange);
-router.post('/me/confirm-email-change', authenticateToken, [body('otp').isLength({ min: 6, max: 6 })], confirmEmailChange);
+router.post('/me/confirm-email-change', authenticateToken, [body('token').isLength({ min: 6, max: 6 })], confirmEmailChange);
 module.exports = router;
 

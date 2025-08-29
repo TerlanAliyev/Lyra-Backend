@@ -28,18 +28,15 @@ const rewardsRouter = require('./src/rewards/rewards.router');
 const { sendReEngagementNotifications, calculateVenueStatistics } = require('./src/scheduler/scheduler.service');
 const gamificationRouter = require('./src/gamification/gamification.router');
 const challengeRouter = require('./src/challenge/challenge.router');
-const { initializeScheduledJobs } = require('./src/scheduler/scheduler'); // <-- YENİ İMPORT
+const { initializeScheduledJobs } = require('./src/scheduler/scheduler'); 
 const optionsRouter = require('./src/options/options.router');
 
 const app = express();
 const server = http.createServer(app);
 
-// === DÜZƏLİŞ BURADADIR ===
-// CORS ayarını yenidən "*" edirik ki, həm admin.socket.io, həm də
-// bizim öz test.html faylımız qoşula bilsin.
 const io = new Server(server, {
     cors: {
-        origin: "*", // Bütün ünvanlardan gələn bağlantılara icazə ver
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });

@@ -523,6 +523,50 @@ const options = {
           }
         }
       },
+      '/api/profile/me/favorites/{venueId}': {
+        post: {
+          tags: ['Profile'],
+          summary: 'Bir məkanı favoritlərə əlavə edir',
+          security: [{ bearerAuth: [] }],
+          parameters: [{
+            name: 'venueId',
+            in: 'path',
+            required: true,
+            description: 'Favoritlərə əlavə ediləcək məkanın ID-si',
+            schema: { type: 'integer' }
+          }],
+          responses: {
+            '200': { description: 'Məkan favoritlərə uğurla əlavə edildi' },
+            '409': { description: 'Məkan artıq favoritlərdədir' }
+          }
+        },
+        delete: {
+          tags: ['Profile'],
+          summary: 'Bir məkanı favoritlərdən silir',
+          security: [{ bearerAuth: [] }],
+          parameters: [{
+            name: 'venueId',
+            in: 'path',
+            required: true,
+            description: 'Favoritlərdən silinəcək məkanın ID-si',
+            schema: { type: 'integer' }
+          }],
+          responses: {
+            '200': { description: 'Məkan favoritlərdən uğurla silindi' },
+            '404': { description: 'Məkan favoritlərdə tapılmadı' }
+          }
+        }
+      },
+      '/api/profile/me/favorites': {
+        get: {
+          tags: ['Profile'],
+          summary: 'Hazırkı istifadəçinin bütün favorit məkanlarını gətirir',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Favorit məkanların siyahısı' }
+          }
+        }
+      },
       '/api/profile/me/request-verification': {
         post: {
           tags: ['Profile'],
@@ -782,6 +826,66 @@ const options = {
             },
             '403': { description: 'Premium abunəlik tələb olunur' },
             '404': { description: 'Məkan tapılmadı' }
+          }
+        }
+      },
+      '/api/location/venues/{id}/reviews': {
+        post: {
+          tags: ['Location'],
+          summary: 'Bir məkana yeni bir rəy və reytinq əlavə edir',
+          security: [{ bearerAuth: [] }],
+          parameters: [{
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Rəy yazılacaq məkanın ID-si',
+            schema: { type: 'integer' }
+          }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    rating: {
+                      type: 'integer',
+                      description: 'Reytinq (1-dən 5-ə qədər)',
+                      minimum: 1,
+                      maximum: 5,
+                      example: 5
+                    },
+                    comment: {
+                      type: 'string',
+                      description: 'Rəy mətni (opsional)',
+                      example: 'Çox gözəl məkandır, xidmət əla idi.'
+                    }
+                  },
+                  required: ['rating']
+                }
+              }
+            }
+          },
+          responses: {
+            '201': { description: 'Rey uğurla əlavə edildi' },
+            '400': { description: 'Yanlış məlumat formatı' },
+            '403': { description: 'Məkanda deyilsiniz' },
+            '409': { description: 'Bu məkana artıq rəy bildirmisiniz' }
+          }
+        },
+        get: {
+          tags: ['Location'],
+          summary: 'Bir məkanın bütün rəylərini gətirir',
+          security: [{ bearerAuth: [] }],
+          parameters: [{
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'Rəyləri gətiriləcək məkanın ID-si',
+            schema: { type: 'integer' }
+          }],
+          responses: {
+            '200': { description: 'Rəylərin siyahısı' }
           }
         }
       },
@@ -2277,151 +2381,151 @@ const options = {
         }
       },
     },
-   components: {
-  schemas: {
-    // === AUTH ===
-    RegisterUserInput: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email', example: 'user@example.com' },
-        password: { type: 'string', minLength: 6, example: 'mypassword123' },
-        name: { type: 'string', example: 'John Doe' },
-        age: { type: 'integer', example: 25 },
-        gender: { type: 'string', example: 'FEMALE' },
-        sexualOrientationId : { type: 'integer', example: 1 },
-        relationshipGoalId : { type: 'integer', example: 3 },
-      },
-      required: ['email', 'password', 'name', 'age', 'gender']
-    },
-    LoginUserInput: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email', example: 'user@example.com' },
-        password: { type: 'string', example: 'mypassword' }
-      },
-      required: ['email', 'password']
-    },
-    RefreshTokenInput: {
-      type: 'object',
-      properties: {
-        refreshToken: { type: 'string', example: 'sample_refresh_token' }
-      },
-      required: ['refreshToken']
-    },
-    GoogleLoginInput: {
-      type: 'object',
-      properties: {
-        idToken: { type: 'string', description: 'Google ID Token', example: 'ya29.a0AfH6...' }
-      },
-      required: ['idToken']
-    },
-    ForgotPasswordInput: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email', example: 'user@example.com' }
-      },
-      required: ['email']
-    },
-    VerifyOtpInput: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email', example: 'user@example.com' },
-        otp: { type: 'string', example: '123456' }
-      },
-      required: ['email', 'otp']
-    },
-    ResetPasswordInput: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', format: 'email' },
-        otp: { type: 'string', example: '123456' },
-        newPassword: { type: 'string', example: 'newStrongPassword' }
-      },
-      required: ['email', 'otp', 'newPassword']
-    },
+    components: {
+      schemas: {
+        // === AUTH ===
+        RegisterUserInput: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            password: { type: 'string', minLength: 6, example: 'mypassword123' },
+            name: { type: 'string', example: 'John Doe' },
+            age: { type: 'integer', example: 25 },
+            gender: { type: 'string', example: 'FEMALE' },
+            sexualOrientationId: { type: 'integer', example: 1 },
+            relationshipGoalId: { type: 'integer', example: 3 },
+          },
+          required: ['email', 'password', 'name', 'age', 'gender']
+        },
+        LoginUserInput: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            password: { type: 'string', example: 'mypassword' }
+          },
+          required: ['email', 'password']
+        },
+        RefreshTokenInput: {
+          type: 'object',
+          properties: {
+            refreshToken: { type: 'string', example: 'sample_refresh_token' }
+          },
+          required: ['refreshToken']
+        },
+        GoogleLoginInput: {
+          type: 'object',
+          properties: {
+            idToken: { type: 'string', description: 'Google ID Token', example: 'ya29.a0AfH6...' }
+          },
+          required: ['idToken']
+        },
+        ForgotPasswordInput: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' }
+          },
+          required: ['email']
+        },
+        VerifyOtpInput: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            otp: { type: 'string', example: '123456' }
+          },
+          required: ['email', 'otp']
+        },
+        ResetPasswordInput: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email' },
+            otp: { type: 'string', example: '123456' },
+            newPassword: { type: 'string', example: 'newStrongPassword' }
+          },
+          required: ['email', 'otp', 'newPassword']
+        },
 
-    // === PROFILE ===
-    UpdateProfileInput: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'John Doe' },
-        age: { type: 'integer', example: 25 },
-        gender: { type: 'string', example: 'male' },
-        bio: { type: 'string', example: 'Hello, I love music' },
-        university: { type: 'string', example: 'Baku State University' },
-        city: { type: 'string', example: 'Baku' },
-        personality: { $ref: '#/components/schemas/PersonalityType' }
-      }
-    },
-
-    // === CHAT ===
-    Message: {
-      type: 'object',
-      properties: {
-        id: { type: 'integer' },
-        content: { type: 'string' },
-        imageUrl: { type: 'string' },
-        audioUrl: { type: 'string' },
-        createdAt: { type: 'string', format: 'date-time' },
-        senderId: { type: 'string', format: 'uuid' },
-        connectionId: { type: 'integer' },
-        isRead: { type: 'boolean' }
-      }
-    },
-    ReportUserInput: {
-      type: 'object',
-      properties: {
-        reason: { type: 'string', example: 'Təhqiramiz məzmun' }
-      },
-      required: ['reason']
-    },
-
-    // === NOTIFICATION ===
-    RegisterDeviceInput: {
-      type: 'object',
-      properties: {
-        token: { type: 'string', example: 'device_fcm_token' }
-      },
-      required: ['token']
-    },
-
-    // === ERROR ===
-    ErrorResponse: {
-      type: 'object',
-      properties: {
-        message: { type: 'string' },
-        errors: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: { msg: { type: 'string' } }
+        // === PROFILE ===
+        UpdateProfileInput: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'John Doe' },
+            age: { type: 'integer', example: 25 },
+            gender: { type: 'string', example: 'male' },
+            bio: { type: 'string', example: 'Hello, I love music' },
+            university: { type: 'string', example: 'Baku State University' },
+            city: { type: 'string', example: 'Baku' },
+            personality: { $ref: '#/components/schemas/PersonalityType' }
           }
-        }
-      },
-      example: {
-        message: 'Xəta baş verdi',
-        errors: [{ msg: 'Email artıq mövcuddur' }]
-      }
-    },
+        },
 
-    // === ENUM-LAR ===
-    AuthProvider: { type: 'string', enum: ['EMAIL', 'GOOGLE', 'APPLE'] },
-    PersonalityType: { type: 'string', enum: ['INTROVERT', 'EXTROVERT', 'AMBIVERT'] },
-    SubscriptionPlan: { type: 'string', enum: ['FREE', 'PREMIUM_MONTHLY', 'PREMIUM_YEARLY'] },
-    ReportStatus: { type: 'string', enum: ['PENDING', 'RESOLVED', 'REJECTED'] },
-    VerificationStatus: { type: 'string', enum: ['NOT_SUBMITTED','PENDING','APPROVED','REJECTED'] },
-    ChallengeInstanceStatus: { type: 'string', enum: ['PENDING','ACCEPTED','DECLINED','COMPLETED','EXPIRED'] },
-    VenueCategory: { type: 'string', enum: ['GENERAL','CAFE','RESTAURANT','UNIVERSITY','BAR','EVENT_SPACE','CLUB'] },
-    IcebreakerCategory: { type: 'string', enum: ['GENERAL','FOOD_DRINK','STUDENT_LIFE','NIGHTLIFE','DEEP_TALK'] }
-  },
-  securitySchemes: {
-    bearerAuth: {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT'
+        // === CHAT ===
+        Message: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            content: { type: 'string' },
+            imageUrl: { type: 'string' },
+            audioUrl: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            senderId: { type: 'string', format: 'uuid' },
+            connectionId: { type: 'integer' },
+            isRead: { type: 'boolean' }
+          }
+        },
+        ReportUserInput: {
+          type: 'object',
+          properties: {
+            reason: { type: 'string', example: 'Təhqiramiz məzmun' }
+          },
+          required: ['reason']
+        },
+
+        // === NOTIFICATION ===
+        RegisterDeviceInput: {
+          type: 'object',
+          properties: {
+            token: { type: 'string', example: 'device_fcm_token' }
+          },
+          required: ['token']
+        },
+
+        // === ERROR ===
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            errors: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { msg: { type: 'string' } }
+              }
+            }
+          },
+          example: {
+            message: 'Xəta baş verdi',
+            errors: [{ msg: 'Email artıq mövcuddur' }]
+          }
+        },
+
+        // === ENUM-LAR ===
+        AuthProvider: { type: 'string', enum: ['EMAIL', 'GOOGLE', 'APPLE'] },
+        PersonalityType: { type: 'string', enum: ['INTROVERT', 'EXTROVERT', 'AMBIVERT'] },
+        SubscriptionPlan: { type: 'string', enum: ['FREE', 'PREMIUM_MONTHLY', 'PREMIUM_YEARLY'] },
+        ReportStatus: { type: 'string', enum: ['PENDING', 'RESOLVED', 'REJECTED'] },
+        VerificationStatus: { type: 'string', enum: ['NOT_SUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'] },
+        ChallengeInstanceStatus: { type: 'string', enum: ['PENDING', 'ACCEPTED', 'DECLINED', 'COMPLETED', 'EXPIRED'] },
+        VenueCategory: { type: 'string', enum: ['GENERAL', 'CAFE', 'RESTAURANT', 'UNIVERSITY', 'BAR', 'EVENT_SPACE', 'CLUB'] },
+        IcebreakerCategory: { type: 'string', enum: ['GENERAL', 'FOOD_DRINK', 'STUDENT_LIFE', 'NIGHTLIFE', 'DEEP_TALK'] }
+      },
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
     }
-  }
-}
 
   },
   apis: [],

@@ -236,8 +236,87 @@ const getLiveVenueStats = async (venueId) => {
     };
 };
 
+// YENİ FAYL FUNKSİYALARI
+const submitVenueReview = async (userId, venueId, data) => {
+    const { rating, comment } = data;
+    
+    // Rəyin 1-5 arasında olduğunu yoxlayırıq
+    if (rating < 1 || rating > 5) {
+      const error = new Error('Rey 1 ile 5 arasinda olmalidir.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // İstifadəçinin məkan daxilində olub-olmadığını yoxlayırıq
+    const activeSession = await prisma.activeSession.findUnique({
+      where: { userId },
+      select: { venueId: true }
+    });
+
+    if (!activeSession || activeSession.venueId !== Number(venueId)) {
+      const error = new Error('Rey bildirmek üçün bu mekanda olmalisiniz.');
+      error.statusCode = 403; // Forbidden
+      throw error;
+    }
+  
+    return prisma.venueReview.upsert({
+      where: {
+        authorId_venueId: {
+          authorId: userId,
+          venueId: Number(venueId),
+        },
+      },
+      update: {
+        rating,
+        comment,
+      },
+      create: {
+        authorId: userId,
+        venueId: Number(venueId),
+        rating,
+        comment,
+      },
+    });
+};
+
+const getVenueReviews = async (venueId) => {
+    return prisma.venueReview.findMany({
+      where: { venueId: Number(venueId) },
+      include: {
+        author: {
+          select: { 
+            profile: {
+              select: {
+                name: true,
+                photos: { where: { isAvatar: true }, select: { url: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+};
+
+const getVenueAverageRating = async (venueId) => {
+    const result = await prisma.venueReview.aggregate({
+        _avg: {
+            rating: true,
+        },
+        where: {
+            venueId: Number(venueId),
+        },
+    });
+
+    return result._avg.rating || 0;
+};
+
+
 module.exports = {
     checkInUser,
     setIncognitoStatus,
-    finalizeCheckIn, getVenueStats, getLiveVenueStats, getDistanceInMeters
+    finalizeCheckIn, getVenueStats, getLiveVenueStats, getDistanceInMeters,
+    submitVenueReview, 
+    getVenueReviews, 
+    getVenueAverageRating, 
 };

@@ -440,6 +440,7 @@ const deleteChallengeTemplate = asyncHandler(async (req, res) => {
 });
 
 
+
 module.exports = {
      getUsers, updateUserRole, updateUserStatus, getReports, updateReportStatus,
     getVenues, createVenue, updateVenue, deleteVenue,
@@ -460,4 +461,5 @@ module.exports = {
     createChallengeTemplate,
     updateChallengeTemplate,
     deleteChallengeTemplate,
+
 };

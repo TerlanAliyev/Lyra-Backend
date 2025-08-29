@@ -204,19 +204,32 @@ const getUserProfileById = async (userId) => {
     console.log(`[CACHE MISS] ❌ İstifadəçi profili (${userId}) keşdə tapılmadı. Verilənlər bazasına sorğu göndərilir...`);
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: {
-            profile: { include: { photos: true, interests: true } },
-            role: true,
-            badges: { // YENİ BLOK
-                include: {
-                    badge: true
-                }
+        // DÜZƏLİŞ: 'password' sahəsi 'select' ilə çıxarılır
+        select: {
+          id: true,
+          email: true,
+          createdAt: true,
+          updatedAt: true,
+          authProvider: true,
+          googleId: true,
+          appleId: true,
+          role: true,
+          isActive: true,
+          subscription: true,
+          subscriptionExpiresAt: true,
+          premiumExpiresAt: true,
+          profile: {
+            include: { photos: true, interests: true }
+          },
+          badges: {
+            include: {
+              badge: true
             }
+          },
         },
     });
 
     if (!user) throw new Error('Bu ID ilə istifadəçi tapılmadı.');
-    delete user.password;
 
     try {
         await redis.set(cacheKey, JSON.stringify(user), 'EX', 3600);
